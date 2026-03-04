@@ -31,8 +31,7 @@ void UInteractionGameplayAbility_Interact::ActivateAbility(
 	UAbilitySystemComponent* AbilitySystem = GetAbilitySystemComponentFromActorInfo();
 	if (AbilitySystem && AbilitySystem->GetOwnerRole() == ROLE_Authority)
 	{
-		UAbilityTask_GrantNearbyInteraction* Task =
-			UAbilityTask_GrantNearbyInteraction::GrantAbilitiesForNearbyInteractors(this, InteractionScanRange, InteractionScanRate, InteractionScanChannel);
+		UAbilityTask_GrantNearbyInteraction* Task = UAbilityTask_GrantNearbyInteraction::GrantAbilitiesForNearbyInteractors(this, InteractionScanRange, InteractionScanRate, InteractionScanChannel);
 		Task->ReadyForActivation();
 	}
 
@@ -55,6 +54,7 @@ void UInteractionGameplayAbility_Interact::ActivateAbility(
 				InteractionScanRange,
 				InteractionScanRate,
 				bShowInteractionTraceDebug);
+
 		WaitTask->InteractableObjectsChanged.AddDynamic(this, &ThisClass::UpdateInteractions);
 		WaitTask->ReadyForActivation();
 	}
