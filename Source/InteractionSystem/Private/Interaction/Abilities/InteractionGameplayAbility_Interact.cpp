@@ -7,7 +7,6 @@
 #include "Interaction/InteractionGameplayTags.h"
 #include "Interaction/InteractionQuery.h"
 #include "Interaction/InteractionStatics.h"
-#include "Interaction/Tasks/AbilityTask_GrantNearbyInteraction.h"
 #include "Interaction/Tasks/AbilityTask_WaitForInteractableTargets_SingleLineTrace.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(InteractionGameplayAbility_Interact)
@@ -27,13 +26,6 @@ void UInteractionGameplayAbility_Interact::ActivateAbility(
 	const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
-	UAbilitySystemComponent* AbilitySystem = GetAbilitySystemComponentFromActorInfo();
-	if (AbilitySystem && AbilitySystem->GetOwnerRole() == ROLE_Authority)
-	{
-		UAbilityTask_GrantNearbyInteraction* Task = UAbilityTask_GrantNearbyInteraction::GrantAbilitiesForNearbyInteractors(this, InteractionScanRange, InteractionScanRate, InteractionScanChannel);
-		Task->ReadyForActivation();
-	}
 
 	if (ActorInfo && ActorInfo->PlayerController.IsValid() && ActorInfo->AvatarActor.IsValid())
 	{
@@ -78,6 +70,27 @@ FInteractionOption UInteractionGameplayAbility_Interact::PickInteractionOption(c
 		return InOptions[0];
 	}
 
+	int32 HighestPriority = InOptions[0].Priority;
+	for (const FInteractionOption& Option : InOptions)
+	{
+		HighestPriority = FMath::Max(HighestPriority, Option.Priority);
+	}
+
+	TArray<FInteractionOption> CandidateOptions;
+	CandidateOptions.Reserve(InOptions.Num());
+	for (const FInteractionOption& Option : InOptions)
+	{
+		if (Option.Priority == HighestPriority)
+		{
+			CandidateOptions.Add(Option);
+		}
+	}
+
+	if (CandidateOptions.Num() == 1)
+	{
+		return CandidateOptions[0];
+	}
+
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
 	IInteractionInstigator* Instigator = AvatarActor ? Cast<IInteractionInstigator>(AvatarActor) : nullptr;
 	if (Instigator)
@@ -88,10 +101,15 @@ FInteractionOption UInteractionGameplayAbility_Interact::PickInteractionOption(c
 		{
 			InteractionQuery.RequestingController = CurrentInfo->PlayerController.Get();
 		}
-		return Instigator->ChooseBestInteractionOption(InteractionQuery, InOptions);
+
+		const FInteractionOption PickedOption = Instigator->ChooseBestInteractionOption(InteractionQuery, CandidateOptions);
+		if (PickedOption.InteractableTarget)
+		{
+			return PickedOption;
+		}
 	}
 
-	return InOptions[0];
+	return CandidateOptions.Num() > 0 ? CandidateOptions[0] : InOptions[0];
 }
 
 bool UInteractionGameplayAbility_Interact::TriggerInteraction()
@@ -122,11 +140,16 @@ bool UInteractionGameplayAbility_Interact::TriggerInteraction()
 	}
 
 	FGameplayEventData Payload;
-	Payload.EventTag = TAG_ABILITY_INTERACTION_ACTIVATE;
+	const FGameplayTag ActivationEventTag = InteractionOption.ActivationEventTag.IsValid() ? InteractionOption.ActivationEventTag : TAG_ABILITY_INTERACTION_ACTIVATE;
+	Payload.EventTag = ActivationEventTag;
 	Payload.Instigator = InstigatorActor;
 	Payload.Target = InteractableTargetActor;
+	if (InteractionOption.ActionTag.IsValid())
+	{
+		Payload.InstigatorTags.AddTag(InteractionOption.ActionTag);
+	}
 
-	InteractionOption.InteractableTarget->CustomizeInteractionEventData(TAG_ABILITY_INTERACTION_ACTIVATE, Payload);
+	InteractionOption.InteractableTarget->CustomizeInteractionEventData(ActivationEventTag, Payload);
 
 	AActor* TargetActor = const_cast<AActor*>(ToRawPtr(Payload.Target));
 	FGameplayAbilityActorInfo TargetActorInfo;
@@ -135,7 +158,7 @@ bool UInteractionGameplayAbility_Interact::TriggerInteraction()
 	return InteractionOption.TargetAbilitySystem->TriggerAbilityFromGameplayEvent(
 		InteractionOption.TargetInteractionAbilityHandle,
 		&TargetActorInfo,
-		TAG_ABILITY_INTERACTION_ACTIVATE,
+		ActivationEventTag,
 		&Payload,
 		*InteractionOption.TargetAbilitySystem);
 }

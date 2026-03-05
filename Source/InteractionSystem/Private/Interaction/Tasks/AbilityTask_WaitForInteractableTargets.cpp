@@ -155,29 +155,25 @@ void UAbilityTask_WaitForInteractableTargets::UpdateInteractableOptions(
 		}
 	}
 
-	bool bOptionsChanged = false;
-	if (NewOptions.Num() == CurrentOptions.Num())
+	NewOptions.Sort();
+
+	const int32 NewOptionCount = NewOptions.Num();
+	const int32 CurrentOptionCount = CurrentOptions.Num();
+	bool bOptionsChanged = (NewOptionCount != CurrentOptionCount);
+
+	if (!bOptionsChanged)
 	{
-		TArray<FInteractionOption> SortedNewOptions = NewOptions;
 		TArray<FInteractionOption> SortedCurrentOptions = CurrentOptions;
-		SortedNewOptions.Sort();
 		SortedCurrentOptions.Sort();
 
-		for (int32 OptionIndex = 0; OptionIndex < SortedNewOptions.Num(); ++OptionIndex)
+		for (int32 OptionIndex = 0; OptionIndex < NewOptionCount; ++OptionIndex)
 		{
-			if (SortedNewOptions[OptionIndex] != SortedCurrentOptions[OptionIndex])
+			if (NewOptions[OptionIndex] != SortedCurrentOptions[OptionIndex])
 			{
 				bOptionsChanged = true;
 				break;
 			}
 		}
-
-		NewOptions = MoveTemp(SortedNewOptions);
-	}
-	else
-	{
-		bOptionsChanged = true;
-		NewOptions.Sort();
 	}
 
 	if (bOptionsChanged)

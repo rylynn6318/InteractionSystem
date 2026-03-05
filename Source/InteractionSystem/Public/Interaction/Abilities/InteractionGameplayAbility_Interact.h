@@ -47,9 +47,6 @@ protected:
 	float InteractionScanRange = 500.0f;
 
 	UPROPERTY(EditDefaultsOnly)
-	TEnumAsByte<ECollisionChannel> InteractionScanChannel = ECC_Visibility;
-
-	UPROPERTY(EditDefaultsOnly)
 	FCollisionProfileName InteractionTraceProfile;
 
 	UPROPERTY(EditDefaultsOnly)

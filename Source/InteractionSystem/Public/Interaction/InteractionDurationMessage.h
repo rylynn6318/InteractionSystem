@@ -11,6 +11,7 @@ struct FInteractionDurationMessage
 	GENERATED_BODY()
 
 public:
+	// Optional utility payload kept intentionally for HUD/UX flows that visualize timed interactions.
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AActor> Instigator = nullptr;
 

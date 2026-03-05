@@ -10,6 +10,7 @@ class INTERACTIONSYSTEM_API AGameplayAbilityTargetActor_Interact : public AGamep
 	GENERATED_BODY()
 
 public:
+	// Legacy/manual targeting path kept intentionally for projects that drive interaction via target actors.
 	AGameplayAbilityTargetActor_Interact(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual FHitResult PerformTrace(AActor* InSourceActor) override;
 };

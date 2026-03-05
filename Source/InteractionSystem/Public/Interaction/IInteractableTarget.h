@@ -39,6 +39,10 @@ class IInteractableTarget
 	GENERATED_BODY()
 
 public:
+	// Populate FInteractionOption fields when adding entries:
+	// - ActionTag: semantic action identifier for UI/logic
+	// - ActivationEventTag: gameplay event tag used when the option is triggered
+	// - Priority: higher value wins before instigator-side tie-breaking
 	virtual void GatherInteractionOptions(const FInteractionQuery& InteractQuery, FInteractionOptionBuilder& OptionBuilder) = 0;
 	virtual void CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag, FGameplayEventData& InOutEventData) { }
 };
